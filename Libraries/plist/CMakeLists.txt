@@ -101,6 +101,7 @@ else ()
 
     target_link_libraries(PlistBuddy PRIVATE linenoise)
     target_compile_definitions(PlistBuddy PRIVATE HAVE_LINENOISE)
+    install(TARGETS linenoise DESTINATION usr/lib)
   endif ()
 endif ()
 
