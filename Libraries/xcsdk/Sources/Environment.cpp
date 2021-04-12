@@ -24,6 +24,12 @@ UserDeveloperRootLink(std::string const &userHomeDirectory)
 }
 
 static std::string
+VarDbDirectory()
+{
+    return "/var/db";
+}
+
+static std::string
 PrimaryDeveloperRootLink()
 {
     return "/var/db/xcode_select_link";
@@ -99,6 +105,19 @@ bool Environment::
 WriteDeveloperRoot(libutil::Filesystem *filesystem, ext::optional<std::string> const &path)
 {
     /*
+     * Proceed only if the path is an invalid developer directory.
+     */
+    if (!path) {
+        return false;
+    }
+    std::string normalized = FSUtil::NormalizePath(*path);
+    std::string resolved = ResolveDeveloperRoot(filesystem, normalized);
+    if (!filesystem->exists(resolved)) {
+        fprintf(stderr, "error: invalid developer directory: '%s'\n", normalized.c_str());
+        return false;
+    }
+
+    /*
      * Remove any existing link.
      */
     if (filesystem->exists(PrimaryDeveloperRootLink())) {
@@ -107,15 +126,20 @@ WriteDeveloperRoot(libutil::Filesystem *filesystem, ext::optional<std::string> c
         }
     }
 
-    if (path) {
-        /*
-         * Write the new link.
-         */
-        std::string normalized = FSUtil::NormalizePath(*path);
-        std::string resolved = ResolveDeveloperRoot(filesystem, normalized);
-        if (!filesystem->writeSymbolicLink(normalized, PrimaryDeveloperRootLink(), true)) {
+    /*
+     * Create '/var/db' directory if not exists.
+     */
+    if (!filesystem->exists(VarDbDirectory())) {
+        if (!filesystem->createDirectory(VarDbDirectory(), true)) {
             return false;
         }
+    }
+
+    /*
+     * Write the new link.
+     */
+    if (!filesystem->writeSymbolicLink(resolved, PrimaryDeveloperRootLink(), true)) {
+        return false;
     }
 
     return true;
