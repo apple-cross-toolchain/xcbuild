@@ -1,0 +1,20 @@
+cc_library(
+    name = "xcexecution",
+    srcs = glob(["Sources/**/*.cpp"]),
+    hdrs = glob(["Headers/**/*.h"]),
+    includes = ["Headers"],
+    visibility = ["//Libraries:__subpackages__"],
+    deps = [
+        "//Libraries/builtin",
+        "//Libraries/dependency",
+        "//Libraries/libutil",
+        "//Libraries/ninja",
+        "//Libraries/pbxbuild",
+        "//Libraries/pbxproj",
+        "//Libraries/pbxsetting",
+        "//Libraries/process",
+        "//Libraries/xcformatter",
+        "//Libraries/xcscheme",
+        "//Libraries/xcworkspace",
+    ],
+)
