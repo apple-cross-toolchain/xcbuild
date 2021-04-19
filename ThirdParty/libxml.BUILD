@@ -32,7 +32,7 @@ genrule(
         "config.h",
         "include/libxml/xmlversion.h",
     ],
-    cmd = "./$(rootpath configure) --silent --without-lzma 1> /dev/null" +
+    cmd = "./$(rootpath configure) --silent --without-lzma --with-iconv=no 1> /dev/null" +
           "&& cp -- config.h $(execpath config.h) " +
           "&& cp -- include/libxml/xmlversion.h $(execpath include/libxml/xmlversion.h)",
 )
