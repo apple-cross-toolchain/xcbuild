@@ -31,8 +31,12 @@ http_archive(
     ],
 )
 
-new_local_repository(
+http_archive(
     name = "linenoise",
     build_file = "//ThirdParty:linenoise.BUILD",
-    path = "ThirdParty/linenoise",
+    sha256 = "1086f82fbf30b0618b1953b05d33db62c68fc7ce49391ce1374192f776fde72d",
+    strip_prefix = "linenoise-97d2850af13c339369093b78abe5265845d78220",
+    urls = [
+        "https://github.com/antirez/linenoise/archive/97d2850af13c339369093b78abe5265845d78220.tar.gz",
+    ],
 )
