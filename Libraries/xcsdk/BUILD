@@ -16,14 +16,13 @@ cc_library(
 cc_binary(
     name = "xcode-select",
     srcs = ["Tools/xcode-select.cpp"],
-    deps = [
-        ":xcsdk",
-        "@zlib",
-    ],
+    visibility = ["//visibility:public"],
+    deps = [":xcsdk"],
 )
 
 cc_binary(
     name = "xcrun",
     srcs = ["Tools/xcrun.cpp"],
+    visibility = ["//visibility:public"],
     deps = [":xcsdk"],
 )

@@ -22,12 +22,17 @@ cc_library(
 cc_binary(
     name = "PlistBuddy",
     srcs = ["Tools/PlistBuddy.cpp"],
-    deps = [":plist", "@linenoise"],
     copts = ["-DHAVE_LINENOISE"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":plist",
+        "@linenoise",
+    ],
 )
 
 cc_binary(
     name = "plutil",
     srcs = ["Tools/plutil.cpp"],
+    visibility = ["//visibility:public"],
     deps = [":plist"],
 )

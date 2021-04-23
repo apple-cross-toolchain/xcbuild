@@ -15,5 +15,9 @@ cc_library(
 cc_binary(
     name = "dump_xcworkspace",
     srcs = ["Tools/dump_xcworkspace.cpp"],
-    deps = [":xcworkspace", "//Libraries/xcscheme", "//Libraries/pbxproj"],
+    deps = [
+        ":xcworkspace",
+        "//Libraries/pbxproj",
+        "//Libraries/xcscheme",
+    ],
 )

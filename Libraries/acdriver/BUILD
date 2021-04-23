@@ -20,5 +20,6 @@ cc_library(
 cc_binary(
     name = "actool",
     srcs = ["Tools/actool.cpp"],
+    visibility = ["//visibility:public"],
     deps = [":acdriver"],
 )
