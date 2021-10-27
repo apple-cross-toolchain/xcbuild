@@ -14,6 +14,7 @@
 #include <windows.h>
 #else
 #include <fcntl.h>
+#include <poll.h>
 #include <sys/wait.h>
 #include <unistd.h>
 #endif
@@ -198,11 +199,18 @@ launch(Filesystem *filesystem, Context const *context)
     char *const *cExecEnv = const_cast<char *const *>(execEnv.data());
 
     /* Setup parent-child stdout/stderr pipe. */
-    int pfd[2];
+    int poutfd[2];
+    int perrfd[2];
     bool pipe_setup_success = true;
-    if (pipe(pfd) == -1) {
+    if (pipe(poutfd) == -1) {
         ::perror("pipe");
         pipe_setup_success = false;
+    }
+    if (pipe_setup_success && pipe(perrfd) == -1) {
+        ::perror("pipe");
+        pipe_setup_success = false;
+        close(poutfd[0]);
+        close(poutfd[1]);
     }
 
     /*
@@ -216,10 +224,12 @@ launch(Filesystem *filesystem, Context const *context)
         /* Fork succeeded, new process. */
         if (pipe_setup_success) {
             /* Setup pipe to parent, redirecting both stdout and stderr */
-            dup2(pfd[1], STDOUT_FILENO);
-            dup2(pfd[1], STDERR_FILENO);
-            close(pfd[0]);
-            close(pfd[1]);
+            dup2(poutfd[1], STDOUT_FILENO);
+            close(poutfd[0]);
+            close(poutfd[1]);
+            dup2(perrfd[1], STDERR_FILENO);
+            close(perrfd[0]);
+            close(perrfd[1]);
         } else {
             /* No parent-child pipe setup, just ignore outputs from child */
             int nullfd = open("/dev/null", O_WRONLY);
@@ -244,21 +254,42 @@ launch(Filesystem *filesystem, Context const *context)
     } else {
         /* Fork succeeded, existing process. */
         if (pipe_setup_success) {
-            close(pfd[1]);
-            /* Read child's stdout/stderr through pipe, and output stdout */
-            while (true) {
+            close(poutfd[1]);
+            close(perrfd[1]);
+            /* Forward child's stdout/stderr faithfully */
+            int poll_res;
+            pollfd plist[] = {{poutfd[0], POLLIN}, {perrfd[0], POLLIN}};
+            while ((poll_res = ::poll(plist, 2, /* timeout */ -1)) > 0) {
                 char pin[PIPE_BUFFER_SIZE];
-                int readlen = read(pfd[0], &pin, sizeof(pin));
-                if (readlen > 0) {
-                    fwrite(pin, readlen, 1, stdout);
-                } else {
-                    if (readlen != 0) {
-                        ::perror("read");
+                if (plist[0].revents & POLLIN) {
+                    int readlen = ::read(poutfd[0], &pin, sizeof(pin));
+                    if (readlen > 0) {
+                        ::fwrite(pin, readlen, 1, stdout);
+                    } else {
+                        if (readlen != 0) {
+                            ::perror("read from stdout");
+                        }
+                        break;
                     }
+                } else if (plist[1].revents & POLLIN) {
+                    int readlen = ::read(perrfd[0], &pin, sizeof(pin));
+                    if (readlen > 0) {
+                        ::fwrite(pin, readlen, 1, stderr);
+                    } else {
+                        if (readlen != 0) {
+                            ::perror("read from stderr");
+                        }
+                        break;
+                    }
+                } else {
                     break;
                 }
             }
-            close(pfd[0]);
+            if (poll_res < 0) {
+                ::perror("poll");
+            }
+            close(poutfd[0]);
+            close(perrfd[0]);
         }
 
         int status;
